@@ -40,15 +40,15 @@ header h1::before{content:"🏆";font-size:20px;filter:drop-shadow(0 1px 1px rgb
 .disc{margin:6px 0 0;font-size:11.5px;line-height:1.4;opacity:.96;max-width:640px}
 .disc b{font-weight:700}
 
-/* ---------- tabs ---------- */
-.tabs{position:sticky;top:0;z-index:30;display:flex;background:rgba(255,255,255,.92);
-  backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--line)}
-.tabs button{position:relative;flex:1;border:0;background:transparent;color:var(--mut);
-  font-size:13px;font-weight:700;padding:13px 4px;min-height:46px;transition:color .2s}
-.tabs button::after{content:"";position:absolute;left:14%;right:14%;bottom:0;height:3px;border-radius:3px 3px 0 0;
-  background:linear-gradient(90deg,var(--grn),var(--grn2));transform:scaleX(0);transition:transform .28s cubic-bezier(.4,0,.2,1)}
-.tabs button.act{color:var(--grnd)}
-.tabs button.act::after{transform:scaleX(1)}
+/* ---------- tabs (segmented pill) ---------- */
+.tabs{position:sticky;top:0;z-index:30;display:flex;gap:5px;padding:8px 8px 9px;
+  background:rgba(247,250,249,.82);backdrop-filter:saturate(1.5) blur(12px);border-bottom:1px solid rgba(230,235,241,.8)}
+.tabs button{flex:1;border:0;background:transparent;color:var(--mut);
+  font-size:12.5px;font-weight:800;padding:10px 4px;min-height:42px;border-radius:12px;
+  transition:background .25s,color .25s,box-shadow .25s,transform .1s}
+.tabs button:active{transform:scale(.96)}
+.tabs button.act{color:#fff;background:linear-gradient(135deg,var(--grn),var(--grn2));
+  box-shadow:0 6px 16px -6px rgba(12,154,75,.6)}
 
 main{padding:11px}
 section{animation:fadeIn .25s ease}
@@ -127,19 +127,32 @@ section{animation:fadeIn .25s ease}
 .track i{display:block;height:100%;width:0;border-radius:7px;transition:width .8s cubic-bezier(.2,.7,.2,1)}
 .pv{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
 
-/* ---------- 16vos en vivo ---------- */
-.kopgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.kop{border:1px solid var(--line);border-radius:13px;padding:9px;background:linear-gradient(180deg,#fff,#fbfdfc);position:relative;overflow:hidden}
-.kop.empty{opacity:.6}
-.koph{display:flex;justify-content:space-between;font-size:9.5px;color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
-.kpct{color:var(--blu)}
-.kopside{display:flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 0}
-.kopside .tn{flex:1}
-.kopside b{font-weight:800;font-variant-numeric:tabular-nums}
-.kopside.fav{font-weight:800}
-.kopside.fav b{color:var(--grn)}
-.kopbar{height:7px;background:#fde3e3;border-radius:6px;overflow:hidden;margin:4px 0}
-.kopbar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--grn2),var(--grn));transition:width .8s cubic-bezier(.2,.7,.2,1)}
+/* ---------- 16vos: escenarios ---------- */
+.kopgrid{display:grid;grid-template-columns:1fr;gap:9px}
+.kop{border:1px solid var(--line);border-radius:14px;padding:10px;background:linear-gradient(180deg,#fff,#fafdfb)}
+.koph{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid #f1f5f8}
+.kpct{color:var(--blu);background:#eef4ff;padding:2px 7px;border-radius:999px;font-size:9px}
+.scn{display:grid;grid-template-columns:38px 1fr auto 1fr;align-items:center;gap:7px;padding:4px 0;font-size:11.5px}
+.scn+.scn{border-top:1px solid #f5f8fa}
+.scnp{font-weight:800;color:var(--blu);font-variant-numeric:tabular-nums;font-size:12px}
+.team{display:flex;align-items:center;gap:5px;min-width:0;color:var(--mut)}
+.team.r{justify-content:flex-end;text-align:right}
+.team.fav{color:var(--ink);font-weight:800}
+.team.fav .tn{color:var(--ink)}
+.wsplit{display:flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums;font-weight:700;color:#aab3bf;font-size:11px}
+.wsplit b{font-weight:800;min-width:20px;text-align:center}
+.wsplit b.w{color:#fff;background:linear-gradient(135deg,var(--grn),var(--grn2));border-radius:6px;padding:1px 5px}
+.wsplit i{font-style:normal;color:#cdd5de}
+.scnmore{font-size:10px;color:var(--mut);text-align:center;margin-top:5px;padding-top:5px;border-top:1px dashed var(--line)}
+
+/* ---------- agenda (live por horario) ---------- */
+.dayh{position:sticky;top:58px;z-index:10;font-size:12px;font-weight:800;color:var(--grnd);text-transform:capitalize;
+  background:rgba(238,243,240,.92);backdrop-filter:blur(6px);padding:9px 4px 6px;margin:6px 0 2px;border-bottom:1px solid var(--line)}
+.dayh:first-of-type{margin-top:0}
+.lmtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.lmtime{font-size:11.5px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.lm.on .lmtime{color:var(--red)}
+.lmtag{font-size:9.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;background:#f1f5f8;padding:3px 8px;border-radius:999px}
 
 /* ---------- live tab ---------- */
 .lm{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .25s,border-color .25s}
@@ -494,6 +507,22 @@ const LIVE_FEED_URL='https://mundial-proxy.scojab.workers.dev';
 const ROUND_LABEL={r32:'Ronda de 32 (16vos)',r16:'Octavos',qf:'Cuartos',sf:'Semifinales',fin:'Final / 3.º'};
 const GROUP_KEYS=Object.keys(G);
 const PENDING=GROUP_KEYS.reduce((a,gl)=>{for(let k=1;k<=6;k++){const id=gl+k;if(!LOCKED.has(id))a.push(id);}return a;},[]);
+// Horarios REALES de kickoff (football-data) para ordenar cronológicamente.
+const KICKOFF={
+ E5:'2026-06-25T20:00:00Z', E6:'2026-06-25T20:00:00Z', F5:'2026-06-25T23:00:00Z', F6:'2026-06-25T23:00:00Z',
+ D5:'2026-06-26T02:00:00Z', D6:'2026-06-26T02:00:00Z', I5:'2026-06-26T19:00:00Z', I6:'2026-06-26T19:00:00Z',
+ H5:'2026-06-27T00:00:00Z', H6:'2026-06-27T00:00:00Z', G5:'2026-06-27T03:00:00Z', G6:'2026-06-27T03:00:00Z',
+ L5:'2026-06-27T21:00:00Z', L6:'2026-06-27T21:00:00Z', K5:'2026-06-27T23:30:00Z', K6:'2026-06-27T23:30:00Z',
+ J5:'2026-06-28T02:00:00Z', J6:'2026-06-28T02:00:00Z'
+};
+const PENDING_ORD=PENDING.slice().sort((a,b)=>(KICKOFF[a]||'zz')<(KICKOFF[b]||'zz')?-1:1);
+function fmtDay(u){ try{return new Date(u).toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});}catch(e){return '';} }
+function fmtTime(u){ try{return new Date(u).toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'});}catch(e){return '';} }
+function mStatus(id){
+  if(app.liveSet[id]) return '🔴 EN VIVO · min '+(app.liveMin[id]!=null?app.liveMin[id]:0);
+  const r=app.scores[id]; if(r&&r[0]!=null) return '✓ Final';
+  return '🕒 '+fmtTime(KICKOFF[id]||'');
+}
 
 let app={
   scores:{}, ko:{}, koPen:{}, N:5000, unlock:false,
@@ -604,18 +633,24 @@ function renderProb(){
     h+='</div>';
   });
   h+='</div>';
-  // 2) 16vos en tiempo real: quién pasa a Octavos
-  h+='<div class="card"><div class="ch">⚔️ 16vos en vivo · ¿quién pasa a Octavos?</div><div class="kopgrid">';
+  // 2) 16vos: TODOS los escenarios probables de cada cruce + quién pasa
+  h+='<div class="card"><div class="ch">⚔️ 16vos en vivo · escenarios y quién pasa</div>'+
+     '<div class="muted small" style="margin:-4px 0 9px">Cada cruce: posibles emparejamientos (% de que pase) y, en cada uno, quién avanza a Octavos.</div>'+
+     '<div class="kopgrid">';
   ROUNDS.r32.forEach(n=>{
-    const o=(app.probs.match[n]||[])[0];
-    if(!o){ h+='<div class="kop empty"><div class="koph">P'+n+'</div><div class="muted small">—</div></div>'; return; }
-    const A=o.pair[0], B=o.pair[1], wA=o.win[0], wB=o.win[1];
-    const favA=wA>=wB;
-    h+='<div class="kop"><div class="koph"><span>P'+n+'</span><span class="kpct">cruce '+o.pct.toFixed(0)+'%</span></div>'+
-       '<div class="kopside'+(favA?' fav':'')+'">'+flag(A)+'<span class="tn">'+nameOf(A)+'</span><b>'+wA.toFixed(0)+'%</b></div>'+
-       '<div class="kopbar"><i data-w="'+wA.toFixed(1)+'%"></i></div>'+
-       '<div class="kopside'+(!favA?' fav':'')+'">'+flag(B)+'<span class="tn">'+nameOf(B)+'</span><b>'+wB.toFixed(0)+'%</b></div>'+
-       '</div>';
+    const all=(app.probs.match[n]||[]);
+    const scn=all.filter(o=>o.pct>=3).slice(0,5);
+    const rest=all.length-scn.length;
+    h+='<div class="kop"><div class="koph"><span>16vo · P'+n+'</span><span class="kpct">'+all.length+' escenarios</span></div>';
+    if(!scn.length){ h+='<div class="muted small">—</div>'; }
+    scn.forEach(o=>{ const A=o.pair[0],B=o.pair[1],wA=o.win[0],wB=o.win[1]; const favA=wA>=wB;
+      h+='<div class="scn"><span class="scnp">'+o.pct.toFixed(0)+'%</span>'+
+         '<span class="team '+(favA?'fav':'')+'">'+flag(A)+'<span class="tn">'+nameOf(A)+'</span></span>'+
+         '<span class="wsplit"><b'+(favA?' class="w"':'')+'>'+wA.toFixed(0)+'</b><i>·</i><b'+(!favA?' class="w"':'')+'>'+wB.toFixed(0)+'</b></span>'+
+         '<span class="team r '+(!favA?'fav':'')+'"><span class="tn">'+nameOf(B)+'</span>'+flag(B)+'</span></div>';
+    });
+    if(rest>0) h+='<div class="scnmore">+'+rest+' menos probables</div>';
+    h+='</div>';
   });
   h+='</div></div>';
   c.innerHTML=h;
@@ -650,42 +685,40 @@ function setStatus(t){ const e=document.getElementById('mc-status'); if(e)e.text
 /* ================= TAB: LIVE ================= */
 function renderLive(){
   const c=document.getElementById('live-cont');
-  // agrupar por fecha
-  const byDate={};
-  PENDING.forEach(id=>{ const d=DATES[id]||'—'; (byDate[d]=byDate[d]||[]).push(id); });
   let h='<div class="livebar" id="autobox"></div>';
-  Object.keys(byDate).forEach(d=>{
-    h+='<div class="card"><div class="ch">'+d+'</div>';
-    byDate[d].forEach(id=>{
-      const gl=id[0], k=+id.slice(1)-1, p=FX[k];
-      const ca=G[gl][p[0]], cb=G[gl][p[1]];
-      const r=app.scores[id]; const live=!!app.liveSet[id];
-      const va=(r&&r[0]!=null)?r[0]:0, vb=(r&&r[1]!=null)?r[1]:0;
-      const played=r&&r[0]!=null;
-      h+='<div class="lm'+(live?' on':'')+'" id="lm-'+id+'">'+
-         '<div class="lrow">'+
-           '<button class="stp" data-id="'+id+'" data-s="0" data-d="-1">−</button>'+
-           '<span class="ls">'+flag(ca)+'<b class="sv" data-id="'+id+'" data-s="0">'+(played?va:'·')+'</b></span>'+
-           '<button class="stp" data-id="'+id+'" data-s="0" data-d="1">+</button>'+
-           '<span class="lvs">vs</span>'+
-           '<button class="stp" data-id="'+id+'" data-s="1" data-d="-1">−</button>'+
-           '<span class="ls">'+flag(cb)+'<b class="sv" data-id="'+id+'" data-s="1">'+(played?vb:'·')+'</b></span>'+
-           '<button class="stp" data-id="'+id+'" data-s="1" data-d="1">+</button>'+
-         '</div>'+
-         '<div class="lrow2"><span class="lnm">'+T[ca].n+' vs '+T[cb].n+'</span>'+
-           '<button class="livetog" data-id="'+id+'">'+(live?'🔴 EN VIVO':'▶ EN VIVO')+'</button></div>'+
-         '<div class="lrow3'+(live?'':' hide')+'" id="lr3-'+id+'">'+
-           '<span class="mlab">Minuto</span>'+
-           '<button class="mst" data-id="'+id+'" data-d="-1">−</button>'+
-           '<b class="mv" data-id="'+id+'">'+(app.liveMin[id]!=null?app.liveMin[id]:0)+"'</b>"+
-           '<button class="mst" data-id="'+id+'" data-d="1">+</button>'+
-           '<button class="mst5" data-id="'+id+'" data-d="5">+5</button>'+
-           '<button class="mset" data-id="'+id+'" data-v="90" title="tiempo cumplido (marcador final)">FT</button>'+
-           '<span class="muted small mlh">a más minuto, más se “congela” el marcador</span>'+
-         '</div>'+
-         '</div>';
-    });
-    h+='</div>';
+  let curDay='';
+  PENDING_ORD.forEach(id=>{
+    const day=fmtDay(KICKOFF[id]||'');
+    if(day!==curDay){ h+='<div class="dayh">'+day+'</div>'; curDay=day; }
+    const gl=id[0], k=+id.slice(1)-1, p=FX[k];
+    const ca=G[gl][p[0]], cb=G[gl][p[1]];
+    const r=app.scores[id]; const live=!!app.liveSet[id];
+    const va=(r&&r[0]!=null)?r[0]:0, vb=(r&&r[1]!=null)?r[1]:0;
+    const played=r&&r[0]!=null;
+    h+='<div class="lm'+(live?' on':'')+'" id="lm-'+id+'">'+
+       '<div class="lmtop"><span class="lmtime" data-id="'+id+'">'+mStatus(id)+'</span>'+
+         '<span class="lmtag">Grupo '+gl+'</span></div>'+
+       '<div class="lrow">'+
+         '<button class="stp" data-id="'+id+'" data-s="0" data-d="-1">−</button>'+
+         '<span class="ls">'+flag(ca)+'<b class="sv" data-id="'+id+'" data-s="0">'+(played?va:'·')+'</b></span>'+
+         '<button class="stp" data-id="'+id+'" data-s="0" data-d="1">+</button>'+
+         '<span class="lvs">vs</span>'+
+         '<button class="stp" data-id="'+id+'" data-s="1" data-d="-1">−</button>'+
+         '<span class="ls">'+flag(cb)+'<b class="sv" data-id="'+id+'" data-s="1">'+(played?vb:'·')+'</b></span>'+
+         '<button class="stp" data-id="'+id+'" data-s="1" data-d="1">+</button>'+
+       '</div>'+
+       '<div class="lrow2"><span class="lnm">'+T[ca].n+' vs '+T[cb].n+'</span>'+
+         '<button class="livetog" data-id="'+id+'">'+(live?'🔴 EN VIVO':'▶ EN VIVO')+'</button></div>'+
+       '<div class="lrow3'+(live?'':' hide')+'" id="lr3-'+id+'">'+
+         '<span class="mlab">Minuto</span>'+
+         '<button class="mst" data-id="'+id+'" data-d="-1">−</button>'+
+         '<b class="mv" data-id="'+id+'">'+(app.liveMin[id]!=null?app.liveMin[id]:0)+"'</b>"+
+         '<button class="mst" data-id="'+id+'" data-d="1">+</button>'+
+         '<button class="mst5" data-id="'+id+'" data-d="5">+5</button>'+
+         '<button class="mset" data-id="'+id+'" data-v="90" title="tiempo cumplido (marcador final)">FT</button>'+
+         '<span class="muted small mlh">a más minuto, más se “congela” el marcador</span>'+
+       '</div>'+
+       '</div>';
   });
   c.innerHTML=h;
   renderAutoBox();
@@ -700,6 +733,8 @@ function refreshLiveValues(){
     setSv(a, played?r[0]:'·'); setSv(b, played?r[1]:'·');
     const lm=document.getElementById('lm-'+id);
     if(lm)lm.classList.toggle('on',!!app.liveSet[id]);
+    const tm=document.querySelector('.lmtime[data-id="'+id+'"]');
+    if(tm)tm.textContent=mStatus(id);
     const tg=document.querySelector('.livetog[data-id="'+id+'"]');
     if(tg)tg.textContent=app.liveSet[id]?'🔴 EN VIVO':'▶ EN VIVO';
     const lr3=document.getElementById('lr3-'+id);
