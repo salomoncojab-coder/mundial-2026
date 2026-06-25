@@ -409,7 +409,9 @@ function runMCsync(base, N, live){ const acc=newAcc(); for(let i=0;i<N;i++) accu
 
 /* ===== UI ===== */
 /* ================= App (DOM) ================= */
-const LS_KEY='mundial2026_v2';  // v2: sync de 5 fijos a resultados reales football-data
+const LS_KEY='mundial2026_v3';  // v3: auto-live preconfigurado y encendido por default
+// Proxy live por default → al abrir (o al compartir) jala solo, sin configurar nada.
+const LIVE_FEED_URL='https://mundial-proxy.scojab.workers.dev';
 const ROUND_LABEL={r32:'Ronda de 32 (16vos)',r16:'Octavos',qf:'Cuartos',sf:'Semifinales',fin:'Final / 3.º'};
 const GROUP_KEYS=Object.keys(G);
 const PENDING=GROUP_KEYS.reduce((a,gl)=>{for(let k=1;k<=6;k++){const id=gl+k;if(!LOCKED.has(id))a.push(id);}return a;},[]);
@@ -419,7 +421,7 @@ let app={
   liveSet:{},            // ids marcados "EN VIVO"
   liveMin:{},            // minuto actual del partido en vivo (para in-play)
   probs:null,
-  auto:{on:false, provider:'football-data', token:'', url:'', every:30}
+  auto:{on:true, provider:'custom', token:'', url:LIVE_FEED_URL, every:30}  // prendido por default
 };
 // mapa {id:minuto} de partidos en juego (alimenta el modelo in-play del Monte Carlo)
 function liveMap(){ const m={}; for(const id in app.liveSet){ if(app.liveSet[id]) m[id]=(app.liveMin[id]!=null?app.liveMin[id]:45); } return m; }
@@ -441,6 +443,7 @@ function load(){
       app.liveSet=s.liveSet||{}; app.liveMin=s.liveMin||{}; if(s.auto)Object.assign(app.auto,s.auto);
     }
   }catch(e){}
+  if(!app.auto.url) app.auto.url=LIVE_FEED_URL;   // siempre con proxy listo
   // los fijos SIEMPRE respetan el valor jugado (no se borran)
   LOCKED.forEach(id=>{ if(app.scores[id]==null) app.scores[id]=clone(SEED[id]); });
 }
@@ -633,7 +636,8 @@ function setMinTo(id,v){
 function renderAutoBox(){
   const e=document.getElementById('autobox'); if(!e)return;
   const a=app.auto;
-  e.innerHTML='<div class="ch">Auto-en-vivo (opcional · necesita internet)</div>'+
+  e.innerHTML='<div class="ch">Auto-en-vivo '+(a.on?'🔴 activo':'(necesita internet)')+'</div>'+
+    '<div class="muted small" style="margin-bottom:6px">Ya viene configurado y prendido. No tienes que tocar nada.</div>'+
     '<div class="afield"><label>Fuente</label><select id="a-prov">'+
       '<option value="football-data"'+(a.provider==='football-data'?' selected':'')+'>football-data.org</option>'+
       '<option value="custom"'+(a.provider==='custom'?' selected':'')+'>URL JSON propia</option>'+
@@ -654,8 +658,10 @@ function applyAutoFields(){
   app.auto.every=Math.max(10,parseInt(document.getElementById('a-every').value)||30);
   save();
 }
-function startAuto(){ applyAutoFields(); app.auto.on=true; save(); renderAutoBox();
-  clearInterval(autoTimer); fetchLive(); autoTimer=setInterval(fetchLive, app.auto.every*1000); }
+// arranca el polling SIN leer el DOM (sirve también en el boot, antes de pintar la pestaña Live)
+function startAutoCore(){ app.auto.on=true; save(); clearInterval(autoTimer);
+  fetchLive(); autoTimer=setInterval(fetchLive, Math.max(10,app.auto.every)*1000); }
+function startAuto(){ applyAutoFields(); startAutoCore(); renderAutoBox(); }
 function stopAuto(){ app.auto.on=false; save(); clearInterval(autoTimer); renderAutoBox(); }
 function aStat(t){ const e=document.getElementById('a-stat'); if(e)e.textContent=t; }
 
@@ -854,6 +860,8 @@ renderGroups();
 wire();
 showTab('grupos');
 runMC();
+// auto-live encendido por default → arranca solo al abrir (clave para compartir)
+if(app.auto.on && app.auto.url) startAutoCore();
 window.flagFail=flagFail;
 
 </script>
