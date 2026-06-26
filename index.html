@@ -146,10 +146,10 @@ section{animation:fadeIn .25s ease}
 .chev{margin-left:6px;color:#9aa6b2;font-style:normal;font-size:10px;flex:0 0 auto}
 .scndet{background:#f6f9ff;border:1px solid #e1ebff;border-radius:11px;padding:9px 11px;margin:2px 0 6px;animation:fadeUp .25s ease}
 .scndt{font-size:10.5px;font-weight:800;color:var(--blu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
-.scnc{display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0;line-height:1.35}
+.scnc{display:flex;align-items:flex-start;gap:7px;font-size:12px;padding:4px 0;line-height:1.4}
 .scnc b{font-weight:800}
-.scnc .ri{font-size:13px;flex:0 0 auto}
-.scnnote{font-size:10.5px;color:var(--mut);margin-top:6px;padding-top:6px;border-top:1px dashed #d9e4fb}
+.scnc .ri{font-size:13px;flex:0 0 auto;line-height:1.4}
+.scnc.sub{color:var(--mut);font-size:11px;padding-left:4px}
 .scnp{font-weight:800;color:var(--blu);font-variant-numeric:tabular-nums;font-size:13px;text-align:right}
 .scnmatch{display:flex;align-items:center;gap:5px;min-width:0;font-weight:600}
 .scnmatch .tn{flex:1;min-width:0}
@@ -632,14 +632,18 @@ function updateTables(){
 }
 
 /* ================= TAB: PROBABILIDAD ================= */
-// ¿qué tiene que pasar para que se dé un cruce de 16vos?
+// ¿qué tiene que pasar para que se dé un cruce de 16vos? (TODAS las condiciones)
 function groupOf(code){ for(const gl in G) if(G[gl].indexOf(code)>=0) return gl; return '?'; }
-function roleText(role, teamCode){
+function condsForRole(role, team){
   const k=role[0], g=role[1];
-  if(k==='W') return ['🥇','gana el Grupo '+g+' (queda 1º)'];
-  if(k==='R') return ['🥈','queda 2º (subcampeón) del Grupo '+g];
-  if(k==='T') return ['🥉','queda 3º del Grupo '+groupOf(teamCode)+' y clasifica entre los 8 mejores terceros'];
-  return ['',''];
+  if(k==='W') return [{c:team, ic:'🥇', txt:'gana el Grupo '+g+' (queda 1º)'}];
+  if(k==='R') return [{c:team, ic:'🥈', txt:'queda 2º (subcampeón) del Grupo '+g}];
+  if(k==='T') return [
+    {c:team, ic:'🥉', txt:'queda 3º del Grupo '+groupOf(team)},
+    {ic:'✅', txt:'queda entre los 8 mejores terceros (de los 12)'},
+    {ic:'🔀', txt:'la combinación de terceros lo cruza en esta llave — sólo el 3º de los grupos '+(POOL[g]||'?')+' puede caer aquí'}
+  ];
+  return [];
 }
 function explainScenario(n, A, B){
   const d=KO_DEF[n]; const roles=[d.a,d.b];
@@ -648,7 +652,7 @@ function explainScenario(n, A, B){
     for(const r of roles) if(r[0]==='T') return r;                            // si no, es el tercero
     return roles[0]; };
   const rA=pick(A), rB=(roles[0]===rA?roles[1]:roles[0]);
-  return [{team:A, r:roleText(rA,A)},{team:B, r:roleText(rB,B)}];
+  return condsForRole(rA,A).concat(condsForRole(rB,B));
 }
 function liveBadge(){
   return '<div class="livebadge"><span class="livedot"></span>EN VIVO · se recalcula solo</div>';
@@ -686,9 +690,10 @@ function renderProb(){
          '<span class="scnmatch">'+flag(A)+'<span class="tn">'+nameOf(A)+'</span><i class="vs">vs</i><span class="tn r">'+nameOf(B)+'</span>'+flag(B)+'<i class="chev">'+(open?'▾':'▸')+'</i></span>'+
          '<span class="scnbar"><i data-w="'+(o.pct/maxp*100).toFixed(1)+'%"></i></span></div>';
       if(open){ const ex=explainScenario(n,A,B);
-        h+='<div class="scndet"><div class="scndt">Para que se dé este cruce 👇</div>'+
-           ex.map(e=>'<div class="scnc">'+flag(e.team)+'<b>'+nameOf(e.team)+'</b> <span class="ri">'+e.r[0]+'</span> '+e.r[1]+'</div>').join('')+
-           '<div class="scnnote">…y que el resto de resultados encaje con esta combinación de terceros.</div></div>';
+        h+='<div class="scndet"><div class="scndt">Todo lo que tiene que pasar 👇</div>'+
+           ex.map(e=>'<div class="scnc'+(e.c?'':' sub')+'"><span class="ri">'+e.ic+'</span>'+
+             (e.c?('<b>'+nameOf(e.c)+'</b> '):'')+e.txt+'</div>').join('')+
+           '</div>';
       }
     });
     if(rest>0) h+='<div class="scnmore">+'+rest+' cruces menos probables</div>';
