@@ -139,8 +139,17 @@ section{animation:fadeIn .25s ease}
 .kop{border:1px solid var(--line);border-radius:14px;padding:10px;background:linear-gradient(180deg,#fff,#fafdfb)}
 .koph{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid #f1f5f8}
 .kpct{color:var(--blu);background:#eef4ff;padding:2px 7px;border-radius:999px;font-size:9px}
-.scn{display:grid;grid-template-columns:34px 1fr;align-items:center;gap:9px;padding:5px 0;font-size:11.5px}
-.scn+.scn{border-top:1px solid #f5f8fa}
+.scn{display:grid;grid-template-columns:34px 1fr;align-items:center;gap:9px;padding:6px 4px;font-size:11.5px;
+  border-radius:9px;cursor:pointer;transition:background .15s}
+.scn:active{background:#f1f5f8}
+.scn.open{background:#eef4ff}
+.chev{margin-left:6px;color:#9aa6b2;font-style:normal;font-size:10px;flex:0 0 auto}
+.scndet{background:#f6f9ff;border:1px solid #e1ebff;border-radius:11px;padding:9px 11px;margin:2px 0 6px;animation:fadeUp .25s ease}
+.scndt{font-size:10.5px;font-weight:800;color:var(--blu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+.scnc{display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0;line-height:1.35}
+.scnc b{font-weight:800}
+.scnc .ri{font-size:13px;flex:0 0 auto}
+.scnnote{font-size:10.5px;color:var(--mut);margin-top:6px;padding-top:6px;border-top:1px dashed #d9e4fb}
 .scnp{font-weight:800;color:var(--blu);font-variant-numeric:tabular-nums;font-size:13px;text-align:right}
 .scnmatch{display:flex;align-items:center;gap:5px;min-width:0;font-weight:600}
 .scnmatch .tn{flex:1;min-width:0}
@@ -537,6 +546,7 @@ let app={
   liveSet:{},            // ids marcados "EN VIVO"
   liveMin:{},            // minuto actual del partido en vivo (para in-play)
   done:{},               // ids que el feed marca FINISHED (para el rótulo "Final")
+  openScn:{},            // cruces de 16vos expandidos (qué tiene que pasar)
   probs:null,
   auto:{on:true, provider:'custom', token:'', url:LIVE_FEED_URL, every:30}  // prendido por default
 };
@@ -622,6 +632,24 @@ function updateTables(){
 }
 
 /* ================= TAB: PROBABILIDAD ================= */
+// ¿qué tiene que pasar para que se dé un cruce de 16vos?
+function groupOf(code){ for(const gl in G) if(G[gl].indexOf(code)>=0) return gl; return '?'; }
+function roleText(role, teamCode){
+  const k=role[0], g=role[1];
+  if(k==='W') return ['🥇','gana el Grupo '+g+' (queda 1º)'];
+  if(k==='R') return ['🥈','queda 2º (subcampeón) del Grupo '+g];
+  if(k==='T') return ['🥉','queda 3º del Grupo '+groupOf(teamCode)+' y clasifica entre los 8 mejores terceros'];
+  return ['',''];
+}
+function explainScenario(n, A, B){
+  const d=KO_DEF[n]; const roles=[d.a,d.b];
+  const pick=team=>{ const g=groupOf(team);
+    for(const r of roles) if((r[0]==='W'||r[0]==='R') && r[1]===g) return r;   // calza por grupo
+    for(const r of roles) if(r[0]==='T') return r;                            // si no, es el tercero
+    return roles[0]; };
+  const rA=pick(A), rB=(roles[0]===rA?roles[1]:roles[0]);
+  return [{team:A, r:roleText(rA,A)},{team:B, r:roleText(rB,B)}];
+}
 function liveBadge(){
   return '<div class="livebadge"><span class="livedot"></span>EN VIVO · se recalcula solo</div>';
 }
@@ -653,10 +681,15 @@ function renderProb(){
     const maxp=scn.length?scn[0].pct:1;
     h+='<div class="kop"><div class="koph"><span>16vo · P'+n+'</span><span class="kpct">'+all.length+' cruces posibles</span></div>';
     if(!scn.length){ h+='<div class="muted small">—</div>'; }
-    scn.forEach(o=>{ const A=o.pair[0],B=o.pair[1];
-      h+='<div class="scn"><span class="scnp">'+o.pct.toFixed(0)+'%</span>'+
-         '<span class="scnmatch">'+flag(A)+'<span class="tn">'+nameOf(A)+'</span><i class="vs">vs</i><span class="tn r">'+nameOf(B)+'</span>'+flag(B)+'</span>'+
+    scn.forEach(o=>{ const A=o.pair[0],B=o.pair[1]; const key=n+'|'+A+'|'+B; const open=!!app.openScn[key];
+      h+='<div class="scn'+(open?' open':'')+'" data-scn="'+key+'"><span class="scnp">'+o.pct.toFixed(0)+'%</span>'+
+         '<span class="scnmatch">'+flag(A)+'<span class="tn">'+nameOf(A)+'</span><i class="vs">vs</i><span class="tn r">'+nameOf(B)+'</span>'+flag(B)+'<i class="chev">'+(open?'▾':'▸')+'</i></span>'+
          '<span class="scnbar"><i data-w="'+(o.pct/maxp*100).toFixed(1)+'%"></i></span></div>';
+      if(open){ const ex=explainScenario(n,A,B);
+        h+='<div class="scndet"><div class="scndt">Para que se dé este cruce 👇</div>'+
+           ex.map(e=>'<div class="scnc">'+flag(e.team)+'<b>'+nameOf(e.team)+'</b> <span class="ri">'+e.r[0]+'</span> '+e.r[1]+'</div>').join('')+
+           '<div class="scnnote">…y que el resto de resultados encaje con esta combinación de terceros.</div></div>';
+      }
     });
     if(rest>0) h+='<div class="scnmore">+'+rest+' cruces menos probables</div>';
     h+='</div>';
@@ -965,6 +998,12 @@ function wire(){
     app.N=+b.dataset.n; document.querySelectorAll('.nbtn').forEach(x=>x.classList.toggle('on',x===b)); save(); runMC();
   });
   document.getElementById('btn-recalc').onclick=runMC;
+  // tocar un cruce de 16vos → desplegar "qué tiene que pasar"
+  document.getElementById('prob-cont').addEventListener('click',e=>{
+    const row=e.target.closest('.scn'); if(!row||!row.dataset.scn)return;
+    const k=row.dataset.scn; if(app.openScn[k])delete app.openScn[k]; else app.openScn[k]=1;
+    renderProb();
+  });
   // live (delegado)
   document.getElementById('live-cont').addEventListener('click',e=>{
     const stp=e.target.closest('.stp'); if(stp){ bump(stp.dataset.id,+stp.dataset.s,+stp.dataset.d); return; }
