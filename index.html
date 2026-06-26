@@ -149,7 +149,8 @@ section{animation:fadeIn .25s ease}
 .scn.open{background:#eef4ff}
 .chev{margin-left:6px;color:#9aa6b2;font-style:normal;font-size:10px;flex:0 0 auto}
 .scndet{background:#f6f9ff;border:1px solid #e1ebff;border-radius:11px;padding:9px 11px;margin:2px 0 6px;animation:fadeUp .25s ease}
-.scndt{font-size:10.5px;font-weight:800;color:var(--blu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+.scndt{font-size:10.5px;font-weight:800;color:var(--blu);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 6px}
+.scndt:first-child{margin-top:0}
 .scnc{display:flex;align-items:flex-start;gap:7px;font-size:12px;padding:4px 0;line-height:1.4}
 .scnc b{font-weight:800}
 .scnc .ri{font-size:13px;flex:0 0 auto;line-height:1.4}
@@ -157,6 +158,28 @@ section{animation:fadeIn .25s ease}
 .scnc.ok{color:var(--grnd)}
 .scnc.ok b{color:var(--grnd)}
 .okb{font-size:9px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--grn),var(--grn2));border-radius:999px;padding:2px 7px;text-transform:uppercase;letter-spacing:.4px;margin-left:auto;flex:0 0 auto;align-self:center}
+/* mini-tablas en vivo */
+.mtgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mtw{background:#fff;border:1px solid #e1ebff;border-radius:9px;padding:7px;overflow:hidden}
+.mth{font-size:9px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.mtb{width:100%;border-collapse:collapse;font-size:10.5px}
+.mtb td{padding:2px;border-bottom:1px solid #f2f6fb;text-align:center}
+.mtb td.mte{text-align:left;white-space:nowrap;overflow:hidden;max-width:92px}
+.mtb td.mpt{font-weight:800}
+.mtb tr.q td{background:#eafaf0}
+.mtb tr.hl td{background:#fff3d6;font-weight:800}
+.mtb tr.hl.q td{background:#dff6e6}
+.mtb .fl{width:16px;height:12px;margin-right:4px}.mtb .fl img{width:16px;height:12px}
+/* resultados que faltan */
+.pathblk{margin-bottom:9px}
+.pathh{font-size:11.5px;margin-bottom:4px}
+.pathr{font-size:11px;color:var(--ink);background:#f3f7ff;border-radius:7px;padding:5px 8px;margin:3px 0;line-height:1.3}
+.pathr::before{content:"✓ ";color:var(--grn);font-weight:800}
+/* combinaciones de terceros */
+.combr{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 8px;background:#f6f9ff;border-radius:7px;margin:3px 0}
+.combg{letter-spacing:2px;font-weight:600;color:var(--mut)}
+.combg b{color:var(--blu)}
+.combp{font-weight:800;color:var(--blu);font-variant-numeric:tabular-nums}
 .scnp{font-weight:800;color:var(--blu);font-variant-numeric:tabular-nums;font-size:13px;text-align:right}
 .scnmatch{display:flex;align-items:center;gap:5px;min-width:0;font-weight:600}
 .scnmatch .tn{flex:1;min-width:0}
@@ -467,7 +490,7 @@ function simWinner(cA,cB){
 function newAcc(){
   const teamStat={}; for(const c in T) teamStat[c]={p1:0,p2:0,p3:0,q:0,r16:0};
   const matchPair={}, matchWin={}; ROUNDS.r32.forEach(n=>{ matchPair[n]={}; matchWin[n]={}; });
-  return { teamStat, matchPair, matchWin, n:0 };
+  return { teamStat, matchPair, matchWin, thirdSets:{}, n:0 };
 }
 function accumOne(acc, base, live){
   live=live||{};
@@ -488,6 +511,7 @@ function accumOne(acc, base, live){
     acc.teamStat[st[1].c].p2++; acc.teamStat[st[1].c].q++;
   }
   asg.advThird.forEach(c=>{ acc.teamStat[c].p3++; acc.teamStat[c].q++; });
+  if(asg.valid){ acc.thirdSets[asg.key]=(acc.thirdSets[asg.key]||0)+1; }
   if(asg.valid){
     const info={ st: allSt, assign: asg.assign };
     ROUNDS.r32.forEach(n=>{
@@ -519,7 +543,8 @@ function finalize(acc){
       return { pair:pr, pct: cnt/N*100, win:[ wp[0]/cnt*100, wp[1]/cnt*100 ] }; // win% condicional al cruce
     }).sort((a,b)=> b.pct-a.pct);
   });
-  return { team, match, N: acc.n };
+  const thirdSets=Object.keys(acc.thirdSets).map(k=>({groups:k, pct:acc.thirdSets[k]/N*100})).sort((a,b)=>b.pct-a.pct);
+  return { team, match, thirdSets, N: acc.n };
 }
 function runMCsync(base, N, live){ const acc=newAcc(); for(let i=0;i<N;i++) accumOne(acc,base,live); return finalize(acc); }
 
@@ -682,6 +707,72 @@ function sideLabel(role){
   if(groupFinished(g)) return flag(t.c)+'<span class="tn">'+nameOf(t.c)+'</span><span class="poslbl">'+pos+' '+g+'</span>';
   return '<span class="poslbl">'+pos+' Grupo '+g+'</span>';
 }
+function rolesOf(n,A,B){ const d=KO_DEF[n], roles=[d.a,d.b];
+  const pick=t=>{ const g=groupOf(t);
+    for(const r of roles) if((r[0]==='W'||r[0]==='R')&&r[1]===g) return r;
+    for(const r of roles) if(r[0]==='T') return r; return roles[0]; };
+  const rA=pick(A), rB=(roles[0]===rA?roles[1]:roles[0]);
+  return [{team:A,role:rA},{team:B,role:rB}]; }
+// enumera los resultados (gana/empata/gana) de los partidos que faltan que dejan a `team` en posición posIdx
+function enumPaths(gl, team, posIdx){
+  const pend=[]; for(let k=0;k<6;k++){ const id=gl+(k+1); const r=app.scores[id]; if(!r||r[0]==null) pend.push(k); }
+  if(!pend.length) return null;                 // grupo ya definido
+  const rep=[[1,0],[0,0],[0,1]], paths=[], total=Math.pow(3,pend.length);
+  for(let mask=0;mask<total;mask++){ const ov={}, desc=[]; let m=mask;
+    for(const k of pend){ const o=m%3; m=(m-o)/3; const p=FX[k], hT=G[gl][p[0]], aT=G[gl][p[1]];
+      ov[gl+(k+1)]=rep[o];
+      desc.push(o===0? nameOf(hT)+' le gana a '+nameOf(aT) : o===1? nameOf(hT)+' y '+nameOf(aT)+' empatan' : nameOf(aT)+' le gana a '+nameOf(hT)); }
+    const st=standings(gl, Object.assign({},app.scores,ov));
+    if(st.findIndex(t=>t.c===team)===posIdx) paths.push(desc);
+  }
+  return paths;
+}
+function miniTable(gl, hi){
+  const st=standings(gl, app.scores), fin=groupFinished(gl); let h='';
+  st.forEach((t,i)=>{ h+='<tr class="'+(t.c===hi?'hl ':'')+(i<2?'q':'')+'"><td>'+(i+1)+'</td>'+
+    '<td class="mte">'+flag(t.c)+'<span class="tn">'+nameOf(t.c)+'</span></td><td>'+t.PJ+'</td><td>'+(t.DG>0?'+':'')+t.DG+'</td><td class="mpt">'+t.Pts+'</td></tr>'; });
+  return '<div class="mtw"><div class="mth">Grupo '+gl+' · '+(fin?'final':'en vivo')+'</div><table class="mtb"><tbody>'+h+'</tbody></table></div>';
+}
+function thirdComboPaths(col, og){
+  if(!app.probs||!app.probs.thirdSets) return [];
+  const ci=COMBO_COLS.indexOf(col);
+  return app.probs.thirdSets.filter(s=> s.groups.indexOf(og)>=0 && COMBO[s.groups] && COMBO[s.groups][ci]===og).slice(0,4);
+}
+function renderScenarioDetail(n,A,B){
+  const rs=rolesOf(n,A,B);
+  const grpOf=x=> x.role[0]==='T'? groupOf(x.team) : x.role[1];
+  const groups=[]; rs.forEach(x=>{ const g=grpOf(x); if(groups.indexOf(g)<0) groups.push(g); });
+  let h='<div class="scndet">';
+  // 1) condiciones (con candado lo ya cumplido)
+  h+='<div class="scndt">✅ Todo lo que tiene que pasar</div>';
+  const ex=condsForRole(rs[0].role,rs[0].team).concat(condsForRole(rs[1].role,rs[1].team));
+  h+=ex.map(e=>'<div class="scnc'+(e.c?'':' sub')+(e.d?' ok':'')+'"><span class="ri">'+(e.d?'🔒':e.ic)+'</span>'+
+       (e.c?('<b>'+nameOf(e.c)+'</b> '):'')+e.txt+(e.d?' <span class="okb">ya pasó</span>':'')+'</div>').join('');
+  // 2) tablas en vivo
+  h+='<div class="scndt">📊 Tablas en vivo</div><div class="mtgrid">'+
+     groups.map(g=>{ const x=rs.find(y=>grpOf(y)===g); return miniTable(g, x?x.team:null); }).join('')+'</div>';
+  // 3) resultados que faltan
+  let pa='';
+  rs.forEach(x=>{ const g=grpOf(x), pos=x.role[0]==='W'?0:(x.role[0]==='R'?1:2), posTxt=['1º','2º','3º'][pos];
+    const paths=enumPaths(g, x.team, pos); if(paths===null) return;
+    pa+='<div class="pathblk"><div class="pathh">Para que <b>'+nameOf(x.team)+'</b> quede '+posTxt+' del Grupo '+g+':</div>';
+    if(!paths.length) pa+='<div class="muted small">— ya no es posible con los partidos que faltan.</div>';
+    else { paths.slice(0,6).forEach(p=>pa+='<div class="pathr">'+p.join(' · ')+'</div>');
+      if(paths.length>6) pa+='<div class="muted small">+'+(paths.length-6)+' caminos más</div>'; }
+    pa+='</div>';
+  });
+  if(pa) h+='<div class="scndt">⚽ Resultados que faltan</div>'+pa+
+    '<div class="muted small">El desempate fino puede depender de la diferencia de goles.</div>';
+  // 4) combinaciones de terceros
+  const tR=rs.find(x=>x.role[0]==='T');
+  if(tR){ const og=groupOf(tR.team), combos=thirdComboPaths(tR.role[1], og);
+    if(combos.length){ h+='<div class="scndt">🔀 Combinaciones de terceros que lo mandan aquí</div>'+
+      '<div class="muted small" style="margin-bottom:6px">Los 8 grupos cuyo 3º clasifica (en <b>negrita</b> el de '+nameOf(tR.team)+'):</div>'+
+      combos.map(s=>'<div class="combr"><span class="combg">'+s.groups.split('').map(x=>x===og?'<b>'+x+'</b>':x).join(' ')+'</span><span class="combp">'+s.pct.toFixed(0)+'%</span></div>').join(''); }
+  }
+  h+='</div>';
+  return h;
+}
 function liveBadge(){
   return '<div class="livebadge"><span class="livedot"></span>EN VIVO · se recalcula solo</div>';
 }
@@ -719,12 +810,7 @@ function renderProb(){
       h+='<div class="scn'+(open?' open':'')+'" data-scn="'+key+'"><span class="scnp">'+o.pct.toFixed(0)+'%</span>'+
          '<span class="scnmatch">'+flag(A)+'<span class="tn">'+nameOf(A)+'</span><i class="vs">vs</i><span class="tn r">'+nameOf(B)+'</span>'+flag(B)+'<i class="chev">'+(open?'▾':'▸')+'</i></span>'+
          '<span class="scnbar"><i data-w="'+(o.pct/maxp*100).toFixed(1)+'%"></i></span></div>';
-      if(open){ const ex=explainScenario(n,A,B);
-        h+='<div class="scndet"><div class="scndt">Todo lo que tiene que pasar 👇</div>'+
-           ex.map(e=>'<div class="scnc'+(e.c?'':' sub')+(e.d?' ok':'')+'"><span class="ri">'+(e.d?'🔒':e.ic)+'</span>'+
-             (e.c?('<b>'+nameOf(e.c)+'</b> '):'')+e.txt+(e.d?' <span class="okb">ya pasó</span>':'')+'</div>').join('')+
-           '</div>';
-      }
+      if(open){ h+=renderScenarioDetail(n,A,B); }
     });
     if(rest>0) h+='<div class="scnmore">+'+rest+' cruces menos probables</div>';
     h+='</div>';
