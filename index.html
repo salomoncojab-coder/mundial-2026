@@ -640,13 +640,19 @@ function updateTables(){
 function groupOf(code){ for(const gl in G) if(G[gl].indexOf(code)>=0) return gl; return '?'; }
 function condsForRole(role, team){
   const k=role[0], g=role[1];
-  if(k==='W') return [{c:team, ic:'🥇', txt:'gana el Grupo '+g+' (queda 1º)'}];
-  if(k==='R') return [{c:team, ic:'🥈', txt:'queda 2º (subcampeón) del Grupo '+g}];
-  if(k==='T') return [
-    {c:team, ic:'🥉', txt:'queda 3º del Grupo '+groupOf(team)},
-    {ic:'✅', txt:'queda entre los 8 mejores terceros (de los 12)'},
-    {ic:'🔀', txt:'la combinación de terceros lo cruza en esta llave — sólo el 3º de los grupos '+(POOL[g]||'?')+' puede caer aquí'}
-  ];
+  if(k==='W') return [{c:team, ic:'🥇', txt:'queda 1º del Grupo '+g+' (gana el grupo)'}];
+  if(k==='R') return [{c:team, ic:'🥈', txt:'queda 2º del Grupo '+g+' (ni 1º ni 3º)'}];
+  if(k==='T'){
+    const og=groupOf(team);                       // grupo del tercero (ej. H para Uruguay)
+    const pool=(POOL[g]||'').split('/');           // grupos cuyos 3os pueden caer en esta llave
+    const rivals=pool.filter(x=>x!==og).map(x=>{ const st=standings(x,app.scores); return nameOf(st[2].c)+' ('+x+')'; });
+    return [
+      {c:team, ic:'🥉', txt:'queda 3º del Grupo '+og+' (ni 1º/2º, ni 4º que queda fuera)'},
+      {ic:'✅', txt:'entra entre los 8 mejores terceros (de los 12 grupos)'},
+      {ic:'🔀', txt:'en esta llave sólo cabe el 3º de los grupos '+POOL[g]+'; el reparto FIFA se la da al de '+og+
+        (rivals.length?', por encima de '+rivals.join(', '):'')}
+    ];
+  }
   return [];
 }
 function explainScenario(n, A, B){
