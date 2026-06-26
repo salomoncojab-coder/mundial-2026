@@ -125,6 +125,19 @@ section{animation:fadeIn .25s ease}
 .refresh{width:36px;height:36px;border:1px solid var(--line);background:#f6f8fa;border-radius:10px;font-size:16px;color:var(--ink);flex:0 0 auto;transition:transform .3s}
 .refresh:active{transform:rotate(180deg) scale(.92);background:var(--grn);color:#fff}
 
+/* ---------- panel "tu rival" ---------- */
+.teamcard{background:linear-gradient(180deg,#ffffff,#f3f9ff);border-color:#dbe8fb}
+.teamsel{width:100%;height:42px;border:1px solid var(--line);border-radius:11px;padding:0 10px;font-size:16px;font-weight:700;background:#fff;color:var(--ink);margin-bottom:9px}
+.tphdr{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;margin-bottom:10px}
+.tpq{margin-left:auto;font-size:11px;font-weight:800;color:var(--grn);background:#e9f9f0;padding:3px 9px;border-radius:999px}
+.tplab{font-size:10px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.oppr{display:grid;grid-template-columns:1fr 80px 38px;align-items:center;gap:8px;margin:4px 0;font-size:12px}
+.oppn{display:flex;align-items:center;min-width:0}
+.opbar{height:9px;background:#e7eef7;border-radius:6px;overflow:hidden}
+.opbar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#7db8ff,var(--blu));transition:width .8s cubic-bezier(.2,.7,.2,1)}
+.oppp{text-align:right;font-weight:800;color:var(--blu);font-variant-numeric:tabular-nums}
+.tpnar{margin-top:10px;padding:10px 11px;background:#eef5ff;border:1px solid #dbe8fb;border-radius:11px;font-size:12px;line-height:1.5;color:var(--ink)}
+.tpnar b{font-weight:800;color:var(--blu)}
 /* ---------- probabilidad: barras ---------- */
 .pg{margin-bottom:11px}
 .pgh{font-size:12px;color:var(--grnd)}
@@ -490,7 +503,7 @@ function simWinner(cA,cB){
 function newAcc(){
   const teamStat={}; for(const c in T) teamStat[c]={p1:0,p2:0,p3:0,q:0,r16:0};
   const matchPair={}, matchWin={}; ROUNDS.r32.forEach(n=>{ matchPair[n]={}; matchWin[n]={}; });
-  return { teamStat, matchPair, matchWin, thirdSets:{}, n:0 };
+  return { teamStat, matchPair, matchWin, thirdSets:{}, teamOpp:{}, n:0 };
 }
 function accumOne(acc, base, live){
   live=live||{};
@@ -521,6 +534,9 @@ function accumOne(acc, base, live){
         const first = a<b?a:b, second = a<b?b:a;
         const key = first+'|'+second;
         acc.matchPair[n][key] = (acc.matchPair[n][key]||0)+1;
+        // rival por equipo (para vista centrada en un equipo)
+        acc.teamOpp[a]=acc.teamOpp[a]||{}; acc.teamOpp[a][b]=(acc.teamOpp[a][b]||0)+1;
+        acc.teamOpp[b]=acc.teamOpp[b]||{}; acc.teamOpp[b][a]=(acc.teamOpp[b][a]||0)+1;
         // simula el 16vo: quién pasa a octavos
         const w=simWinner(a,b);
         acc.teamStat[w].r16++;
@@ -544,7 +560,10 @@ function finalize(acc){
     }).sort((a,b)=> b.pct-a.pct);
   });
   const thirdSets=Object.keys(acc.thirdSets).map(k=>({groups:k, pct:acc.thirdSets[k]/N*100})).sort((a,b)=>b.pct-a.pct);
-  return { team, match, thirdSets, N: acc.n };
+  const teamOpp={};
+  for(const c in acc.teamOpp){ const m=acc.teamOpp[c]; let tot=0; for(const o in m) tot+=m[o];
+    teamOpp[c]=Object.keys(m).map(o=>({c:o, pct:m[o]/tot*100})).sort((a,b)=>b.pct-a.pct); }
+  return { team, match, thirdSets, teamOpp, N: acc.n };
 }
 function runMCsync(base, N, live){ const acc=newAcc(); for(let i=0;i<N;i++) accumOne(acc,base,live); return finalize(acc); }
 
@@ -579,6 +598,7 @@ let app={
   liveMin:{},            // minuto actual del partido en vivo (para in-play)
   done:{},               // ids que el feed marca FINISHED (para el rótulo "Final")
   openScn:{},            // cruces de 16vos expandidos (qué tiene que pasar)
+  myTeam:'MEX',          // equipo para la vista "tu rival en 16vos"
   probs:null,
   auto:{on:true, provider:'custom', token:'', url:LIVE_FEED_URL, every:30}  // prendido por default
 };
@@ -590,7 +610,7 @@ function liveMap(){ const m={}; for(const id in app.liveSet){ if(app.liveSet[id]
 function save(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify({
     scores:app.scores, ko:app.ko, koPen:app.koPen, N:app.N,
-    liveSet:app.liveSet, liveMin:app.liveMin, done:app.done, auto:app.auto
+    liveSet:app.liveSet, liveMin:app.liveMin, done:app.done, myTeam:app.myTeam, auto:app.auto
   })); }catch(e){ /* contextos que bloquean LS: no truena */ }
 }
 function load(){
@@ -600,7 +620,7 @@ function load(){
     if(raw){ const s=JSON.parse(raw);
       if(s.scores) Object.assign(app.scores, s.scores);
       app.ko=s.ko||{}; app.koPen=s.koPen||{}; if(s.N)app.N=s.N;
-      app.liveSet=s.liveSet||{}; app.liveMin=s.liveMin||{}; app.done=s.done||{}; if(s.auto)Object.assign(app.auto,s.auto);
+      app.liveSet=s.liveSet||{}; app.liveMin=s.liveMin||{}; app.done=s.done||{}; if(s.myTeam)app.myTeam=s.myTeam; if(s.auto)Object.assign(app.auto,s.auto);
     }
   }catch(e){}
   if(!app.auto.url) app.auto.url=LIVE_FEED_URL;   // siempre con proxy listo
@@ -773,6 +793,44 @@ function renderScenarioDetail(n,A,B){
   h+='</div>';
   return h;
 }
+// proyección "si ganan los favoritos": llena los pendientes con el favorito (por sembrado)
+function favoriteScores(){
+  const ov={};
+  PENDING.forEach(id=>{ const r=app.scores[id]; if(r&&r[0]!=null) return;
+    const gl=id[0], k=+id.slice(1)-1, p=FX[k]; const h=G[gl][p[0]], a=G[gl][p[1]];
+    ov[id]= (T[h].s<=T[a].s)?[1,0]:[0,1]; });
+  return Object.assign({}, app.scores, ov);
+}
+// rival determinista de un equipo dado un set de resultados
+function detOpponent(team, scores){
+  const st=allStandings(scores); const asg=buildAssign(st); if(!asg.valid) return null;
+  const info={st, assign:asg.assign};
+  for(const n of ROUNDS.r32){ const pr=r32pair(n,info); if(pr[0]===team) return pr[1]; if(pr[1]===team) return pr[0]; }
+  return null;  // no llega a 16vos en esa proyección
+}
+function renderTeamPanel(){
+  const c=app.myTeam||'MEX';
+  const q=app.probs?app.probs.team[c].q:0;
+  const opps=(app.probs&&app.probs.teamOpp[c])||[];
+  const teamsSorted=Object.keys(T).sort((a,b)=>T[a].n<T[b].n?-1:1);
+  let h='<div class="card teamcard"><div class="ch">🎯 Tu rival en 16vos</div>'+
+    '<select id="myteam" class="teamsel">'+teamsSorted.map(k=>'<option value="'+k+'"'+(k===c?' selected':'')+'>'+T[k].n+'</option>').join('')+'</select>'+
+    '<div class="tphdr">'+flag(c)+'<b>'+T[c].n+'</b><span class="tpq">clasifica '+pct(q)+'</span></div>';
+  if(!opps.length){ return h+'<div class="muted small">Aún sin datos suficientes (o difícil que llegue a 16vos).</div></div>'; }
+  const max=opps[0].pct;
+  h+='<div class="tplab">Posible rival (de los que llega a 16vos):</div>';
+  opps.slice(0,7).forEach(o=>{ h+='<div class="oppr"><span class="oppn">'+flag(o.c)+'<span class="tn">'+nameOf(o.c)+'</span></span>'+
+    '<span class="opbar"><i data-w="'+(o.pct/max*100).toFixed(1)+'%"></i></span><span class="oppp">'+o.pct.toFixed(0)+'%</span></div>'; });
+  // narrativa estilo conversacional
+  const top=opps[0], sec=opps[1], det=detOpponent(c, favoriteScores());
+  let nar='Hoy tu rival más probable es <b>'+nameOf(top.c)+'</b> ('+top.pct.toFixed(0)+'%)';
+  if(sec) nar+=', con <b>'+nameOf(sec.c)+'</b> ('+sec.pct.toFixed(0)+'%) pisándole los talones';
+  nar+='. ';
+  if(det) nar+='👉 Si hoy ganan todos los favoritos de los partidos que faltan, te tocaría <b>'+nameOf(det)+'</b>.';
+  else nar+='👉 Con los favoritos de hoy, '+nameOf(c)+' ni siquiera llegaría a 16vos.';
+  h+='<div class="tpnar">'+nar+'</div>';
+  return h+'</div>';
+}
 function liveBadge(){
   return '<div class="livebadge"><span class="livedot"></span>EN VIVO · se recalcula solo</div>';
 }
@@ -781,6 +839,8 @@ function renderProb(){
   const c=document.getElementById('prob-cont');
   if(!app.probs){ c.innerHTML='<p class="muted">Calculando…</p>'; return; }
   let h=liveBadge();
+  // 0) tu rival en 16vos (vista centrada en un equipo)
+  h+=renderTeamPanel();
   // 1) % de clasificar por grupo
   h+='<div class="card"><div class="ch">📊 % de clasificar por grupo</div>';
   GROUP_KEYS.forEach(gl=>{
@@ -818,7 +878,7 @@ function renderProb(){
   h+='</div></div>';
   c.innerHTML=h;
   // anima barras desde 0
-  raf(()=>{ c.querySelectorAll('.track i,.scnbar i').forEach(el=>{ el.style.width=el.dataset.w; }); });
+  raf(()=>{ c.querySelectorAll('.track i,.scnbar i,.opbar i').forEach(el=>{ el.style.width=el.dataset.w; }); });
 }
 
 /* ---- Monte Carlo async (no congela UI) ---- */
@@ -1124,6 +1184,10 @@ function wire(){
     const row=e.target.closest('.scn'); if(!row||!row.dataset.scn)return;
     const k=row.dataset.scn; if(app.openScn[k])delete app.openScn[k]; else app.openScn[k]=1;
     renderProb();
+  });
+  // cambiar el equipo de "Tu rival en 16vos"
+  document.getElementById('prob-cont').addEventListener('change',e=>{
+    if(e.target.id==='myteam'){ app.myTeam=e.target.value; save(); renderProb(); }
   });
   // live (delegado)
   document.getElementById('live-cont').addEventListener('click',e=>{
