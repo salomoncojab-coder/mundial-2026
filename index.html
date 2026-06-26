@@ -131,7 +131,11 @@ section{animation:fadeIn .25s ease}
 .tphdr{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;margin-bottom:10px}
 .tpq{margin-left:auto;font-size:11px;font-weight:800;color:var(--grn);background:#e9f9f0;padding:3px 9px;border-radius:999px}
 .tplab{font-size:10px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.oppw{border-radius:9px;margin:2px 0}
+.oppw.open{background:#eef5ff;padding:2px 6px}
 .oppr{display:grid;grid-template-columns:1fr 80px 38px;align-items:center;gap:8px;margin:4px 0;font-size:12px}
+.oppr[data-scn]{cursor:pointer}
+.oppn .chev{margin-left:5px;color:#9aa6b2;font-style:normal;font-size:10px}
 .oppn{display:flex;align-items:center;min-width:0}
 .opbar{height:9px;background:#e7eef7;border-radius:6px;overflow:hidden}
 .opbar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#7db8ff,var(--blu));transition:width .8s cubic-bezier(.2,.7,.2,1)}
@@ -808,6 +812,30 @@ function detOpponent(team, scores){
   for(const n of ROUNDS.r32){ const pr=r32pair(n,info); if(pr[0]===team) return pr[1]; if(pr[1]===team) return pr[0]; }
   return null;  // no llega a 16vos en esa proyección
 }
+function findSlot(A,B){
+  const fits=(t,r)=> r[0]==='T' ? (POOL[r[1]]||'').split('/').indexOf(groupOf(t))>=0 : groupOf(t)===r[1];
+  for(const n of ROUNDS.r32){ const d=KO_DEF[n], r=[d.a,d.b];
+    if((fits(A,r[0])&&fits(B,r[1]))||(fits(A,r[1])&&fits(B,r[0]))) return n; }
+  return null;
+}
+function roleOfTeam(n,team){ const d=KO_DEF[n], roles=[d.a,d.b], g=groupOf(team);
+  for(const r of roles) if((r[0]==='W'||r[0]==='R')&&r[1]===g) return r;
+  for(const r of roles) if(r[0]==='T') return r; return null; }
+// llave del propio equipo según su posición más probable (1º/2º). 3º → null (depende de combinación)
+function teamSlot(c){
+  const g=groupOf(c), pr=app.probs?app.probs.team[c]:null;
+  let role='W'; if(pr){ role=(pr.p1>=pr.p2&&pr.p1>=pr.p3)?'W':(pr.p2>=pr.p3?'R':'T'); }
+  if(role==='T') return null;
+  for(const n of ROUNDS.r32){ const d=KO_DEF[n]; for(const r of [d.a,d.b]) if(r[0]===role&&r[1]===g) return n; }
+  return null;
+}
+function shortNeed(n, team, vsTeam){
+  const role=roleOfTeam(n,team); if(!role) return '';
+  const k=role[0], g=role[1];
+  if(k==='W') return 'que '+nameOf(team)+' gane el Grupo '+g;
+  if(k==='R') return 'que '+nameOf(team)+' quede 2º del Grupo '+g;
+  return 'que '+nameOf(team)+' quede 3º del Grupo '+groupOf(team)+', se cuele entre los 8 mejores terceros, y el sorteo lo empareje con '+nameOf(vsTeam);
+}
 function renderTeamPanel(){
   const c=app.myTeam||'MEX';
   const q=app.probs?app.probs.team[c].q:0;
@@ -817,15 +845,21 @@ function renderTeamPanel(){
     '<select id="myteam" class="teamsel">'+teamsSorted.map(k=>'<option value="'+k+'"'+(k===c?' selected':'')+'>'+T[k].n+'</option>').join('')+'</select>'+
     '<div class="tphdr">'+flag(c)+'<b>'+T[c].n+'</b><span class="tpq">clasifica '+pct(q)+'</span></div>';
   if(!opps.length){ return h+'<div class="muted small">Aún sin datos suficientes (o difícil que llegue a 16vos).</div></div>'; }
-  const max=opps[0].pct;
-  h+='<div class="tplab">Posible rival (de los que llega a 16vos):</div>';
-  opps.slice(0,7).forEach(o=>{ h+='<div class="oppr"><span class="oppn">'+flag(o.c)+'<span class="tn">'+nameOf(o.c)+'</span></span>'+
-    '<span class="opbar"><i data-w="'+(o.pct/max*100).toFixed(1)+'%"></i></span><span class="oppp">'+o.pct.toFixed(0)+'%</span></div>'; });
-  // narrativa estilo conversacional
-  const top=opps[0], sec=opps[1], det=detOpponent(c, favoriteScores());
+  const max=opps[0].pct; const baseSlot=teamSlot(c);
+  h+='<div class="tplab">Posible rival · toca uno para ver qué tiene que pasar 👇</div>';
+  opps.slice(0,7).forEach(o=>{ const n=baseSlot||findSlot(c,o.c); const key='tp:'+(n||'x')+'|'+c+'|'+o.c; const open=n&&app.openScn[key];
+    h+='<div class="oppw'+(open?' open':'')+'">'+
+       '<div class="oppr"'+(n?' data-scn="'+key+'"':'')+'><span class="oppn">'+flag(o.c)+'<span class="tn">'+nameOf(o.c)+'</span>'+(n?'<i class="chev">'+(open?'▾':'▸')+'</i>':'')+'</span>'+
+       '<span class="opbar"><i data-w="'+(o.pct/max*100).toFixed(1)+'%"></i></span><span class="oppp">'+o.pct.toFixed(0)+'%</span></div>';
+    if(open) h+=renderScenarioDetail(n, c, o.c);
+    h+='</div>';
+  });
+  // narrativa con el "qué tiene que pasar" en fácil
+  const top=opps[0], sec=opps[1], det=detOpponent(c, favoriteScores()), tn=baseSlot||findSlot(c, top.c);
   let nar='Hoy tu rival más probable es <b>'+nameOf(top.c)+'</b> ('+top.pct.toFixed(0)+'%)';
-  if(sec) nar+=', con <b>'+nameOf(sec.c)+'</b> ('+sec.pct.toFixed(0)+'%) pisándole los talones';
+  if(sec) nar+=', con <b>'+nameOf(sec.c)+'</b> ('+sec.pct.toFixed(0)+'%) cerca';
   nar+='. ';
+  if(tn) nar+='Para que sea <b>'+nameOf(top.c)+'</b> hace falta '+shortNeed(tn, top.c, c)+'. ';
   if(det) nar+='👉 Si hoy ganan todos los favoritos de los partidos que faltan, te tocaría <b>'+nameOf(det)+'</b>.';
   else nar+='👉 Con los favoritos de hoy, '+nameOf(c)+' ni siquiera llegaría a 16vos.';
   h+='<div class="tpnar">'+nar+'</div>';
@@ -1181,7 +1215,7 @@ function wire(){
   document.getElementById('btn-recalc').onclick=runMC;
   // tocar un cruce de 16vos → desplegar "qué tiene que pasar"
   document.getElementById('prob-cont').addEventListener('click',e=>{
-    const row=e.target.closest('.scn'); if(!row||!row.dataset.scn)return;
+    const row=e.target.closest('[data-scn]'); if(!row)return;
     const k=row.dataset.scn; if(app.openScn[k])delete app.openScn[k]; else app.openScn[k]=1;
     renderProb();
   });
