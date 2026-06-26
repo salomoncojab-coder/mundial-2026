@@ -154,6 +154,9 @@ section{animation:fadeIn .25s ease}
 .scnc b{font-weight:800}
 .scnc .ri{font-size:13px;flex:0 0 auto;line-height:1.4}
 .scnc.sub{color:var(--mut);font-size:11px;padding-left:4px}
+.scnc.ok{color:var(--grnd)}
+.scnc.ok b{color:var(--grnd)}
+.okb{font-size:9px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--grn),var(--grn2));border-radius:999px;padding:2px 7px;text-transform:uppercase;letter-spacing:.4px;margin-left:auto;flex:0 0 auto;align-self:center}
 .scnp{font-weight:800;color:var(--blu);font-variant-numeric:tabular-nums;font-size:13px;text-align:right}
 .scnmatch{display:flex;align-items:center;gap:5px;min-width:0;font-weight:600}
 .scnmatch .tn{flex:1;min-width:0}
@@ -640,17 +643,23 @@ function updateTables(){
 function groupOf(code){ for(const gl in G) if(G[gl].indexOf(code)>=0) return gl; return '?'; }
 function condsForRole(role, team){
   const k=role[0], g=role[1];
-  if(k==='W') return [{c:team, ic:'🥇', txt:'queda 1º del Grupo '+g+' (gana el grupo)'}];
-  if(k==='R') return [{c:team, ic:'🥈', txt:'queda 2º del Grupo '+g+' (ni 1º ni 3º)'}];
+  const allFin=GROUP_KEYS.every(groupFinished);
+  if(k==='W'){ const d=groupFinished(g)&&standings(g,app.scores)[0].c===team;
+    return [{c:team, ic:'🥇', txt:'queda 1º del Grupo '+g+' (gana el grupo)', d}]; }
+  if(k==='R'){ const d=groupFinished(g)&&standings(g,app.scores)[1].c===team;
+    return [{c:team, ic:'🥈', txt:'queda 2º del Grupo '+g+' (ni 1º ni 3º)', d}]; }
   if(k==='T'){
     const og=groupOf(team);                       // grupo del tercero (ej. H para Uruguay)
     const pool=(POOL[g]||'').split('/');           // grupos cuyos 3os pueden caer en esta llave
     const rivals=pool.filter(x=>x!==og).map(x=>{ const st=standings(x,app.scores); return nameOf(st[2].c)+' ('+x+')'; });
+    const third=groupFinished(og)&&standings(og,app.scores)[2].c===team;
+    let top8=false, route=false;
+    if(allFin){ const a=buildAssign(allStandings(app.scores)); top8=a.advThird.has(team); route=a.assign[g]===og; }
     return [
-      {c:team, ic:'🥉', txt:'queda 3º del Grupo '+og+' (ni 1º/2º, ni 4º que queda fuera)'},
-      {ic:'✅', txt:'entra entre los 8 mejores terceros (de los 12 grupos)'},
+      {c:team, ic:'🥉', txt:'queda 3º del Grupo '+og+' (ni 1º/2º, ni 4º que queda fuera)', d:third},
+      {ic:'✅', txt:'entra entre los 8 mejores terceros (de los 12 grupos)', d:top8},
       {ic:'🔀', txt:'en esta llave sólo cabe el 3º de los grupos '+POOL[g]+'; el reparto FIFA se la da al de '+og+
-        (rivals.length?', por encima de '+rivals.join(', '):'')}
+        (rivals.length?', por encima de '+rivals.join(', '):''), d:route}
     ];
   }
   return [];
@@ -712,8 +721,8 @@ function renderProb(){
          '<span class="scnbar"><i data-w="'+(o.pct/maxp*100).toFixed(1)+'%"></i></span></div>';
       if(open){ const ex=explainScenario(n,A,B);
         h+='<div class="scndet"><div class="scndt">Todo lo que tiene que pasar 👇</div>'+
-           ex.map(e=>'<div class="scnc'+(e.c?'':' sub')+'"><span class="ri">'+e.ic+'</span>'+
-             (e.c?('<b>'+nameOf(e.c)+'</b> '):'')+e.txt+'</div>').join('')+
+           ex.map(e=>'<div class="scnc'+(e.c?'':' sub')+(e.d?' ok':'')+'"><span class="ri">'+(e.d?'🔒':e.ic)+'</span>'+
+             (e.c?('<b>'+nameOf(e.c)+'</b> '):'')+e.txt+(e.d?' <span class="okb">ya pasó</span>':'')+'</div>').join('')+
            '</div>';
       }
     });
