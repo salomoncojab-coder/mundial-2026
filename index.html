@@ -1102,7 +1102,27 @@ function applyFixtures(fx){
       n++;
     }
   });
+  // --- 16vos en adelante: llenar el cuadro con resultados reales (mapeo por par de equipos) ---
+  let koChanged=false;
+  ['r32','r16','qf','sf','fin'].forEach(rk=>{
+    const ctx=koCtx();                                  // recalcula para que los ganadores propaguen
+    ROUNDS[rk].forEach(slot=>{
+      const pr=ctx.pair[slot], pa=pr[0], pb=pr[1]; if(!pa||!pb) return;
+      const hit=fx.find(m=> (m.home===pa&&m.away===pb)||(m.home===pb&&m.away===pa));
+      if(hit && hit.hs!=null && hit.as!=null){
+        const sc=(hit.home===pa)?[hit.hs,hit.as]:[hit.as,hit.hs];
+        const cur=app.ko[slot]; if(!cur||cur[0]!==sc[0]||cur[1]!==sc[1]) koChanged=true;
+        app.ko[slot]=sc;
+        if(sc[0]===sc[1]){                              // empate → penales según el feed
+          if(hit.winner==='HOME_TEAM') app.koPen[slot]=(hit.home===pa)?0:1;
+          else if(hit.winner==='AWAY_TEAM') app.koPen[slot]=(hit.home===pa)?1:0;
+        }
+        n++;
+      }
+    });
+  });
   if(n){ onScoreChange(); refreshLiveValues(); updateTables(); }
+  if(koChanged){ save(); renderCuadro(); }
   return n;
 }
 
